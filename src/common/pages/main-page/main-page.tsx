@@ -21,7 +21,7 @@ import { ChangeEventHandler, FC, useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../../../app/store';
 import { FilterNames } from '../../common-consts/filters';
-import { getQueryParam } from '../../common-utils/query';
+import { getQueryParam, setDefaultQuery } from '../../common-utils/query';
 import CreateClientModal from '../../create-client-modal';
 import Pagination from '../../pagination';
 import { selectClients, selectClientsCount } from './main-page-selectors';
@@ -40,9 +40,16 @@ const MainPage: FC = () => {
     const [modal, setModal] = useState(false);
     const [client, setClient] = useState<Client | null>(null);
 
+    const pageIndex = getQueryParam(search, FilterNames.Page);
+    const pageSize = getQueryParam(search, FilterNames.PageSize);
+
     useEffect(() => {
+        if (!pageIndex || !pageSize) {
+            const newQuery = setDefaultQuery(search);
+            navigate(`${pathname}?${newQuery}`);
+        }
         dispatch(loadClients.getThunk({ query: search }));
-    }, [dispatch, search]);
+    }, [dispatch, search, navigate, pathname, pageIndex, pageSize]);
 
     useEffect(() => {
         return () => {
@@ -50,8 +57,6 @@ const MainPage: FC = () => {
         };
     }, [dispatch]);
 
-    const pageIndex = getQueryParam(search, FilterNames.Page);
-    const pageSize = getQueryParam(search, FilterNames.PageSize);
     if (!pageIndex || !pageSize) return null;
     const pagesCount = Math.ceil(totalCount / parseInt(pageSize));
 

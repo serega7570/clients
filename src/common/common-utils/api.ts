@@ -64,18 +64,13 @@ export function createAppAsyncThunk<ParamsType extends object, ReturnType>(
 
 type ApiRequest = {
     config: RawAxiosRequestConfig;
-    sessionToken: string | null;
     requestAccess?: {
         sessionUserPermissions: Record<string, string>;
         requiredPermissions: string[];
     };
     dispatch?: AppDispatch;
 };
-export async function makeApiRequest<ReturnType>({
-    config,
-    sessionToken,
-    requestAccess,
-}: ApiRequest): Promise<ReturnType> {
+export async function makeApiRequest<ReturnType>({ config, requestAccess }: ApiRequest): Promise<ReturnType> {
     if (requestAccess) {
         const { sessionUserPermissions, requiredPermissions } = requestAccess;
 
@@ -89,11 +84,6 @@ export async function makeApiRequest<ReturnType>({
         ...config,
         signal: getAbortController().signal,
     };
-    if (sessionToken) {
-        requestConfig.headers = {
-            Authorization: `Bearer ${sessionToken}`,
-        };
-    }
 
     const { data } = await axios<ReturnType>(requestConfig);
     return data;

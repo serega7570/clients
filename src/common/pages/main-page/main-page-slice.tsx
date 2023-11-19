@@ -1,16 +1,18 @@
 import { createSlice } from '@reduxjs/toolkit';
 import { BACKEND_API_URL } from '../../common-consts/api';
 import { createAppAsyncThunk, makeApiRequest } from '../../common-utils/api';
-import { Client } from './main-page-type';
+import { Address, Client } from './main-page-type';
 
 type ClientsState = {
     clients: Client[];
     count: number;
+    addresses: Address[];
 };
 
 export const CLIENT_INITIAL_STATE: ClientsState = {
     clients: [],
     count: 0,
+    addresses: [],
 };
 
 const clientsSlice = createSlice({
@@ -20,10 +22,14 @@ const clientsSlice = createSlice({
         clearClients: () => CLIENT_INITIAL_STATE,
     },
     extraReducers(builder) {
-        builder.addCase(loadClients.fulfilled, (state, { payload }) => {
-            state.clients = payload.results;
-            state.count = payload.count;
-        });
+        builder
+            .addCase(loadClients.fulfilled, (state, { payload }) => {
+                state.clients = payload.results;
+                state.count = payload.count;
+            })
+            .addCase(loadAddresses.fulfilled, (state, { payload }) => {
+                state.addresses = payload;
+            });
     },
 });
 
@@ -38,7 +44,6 @@ export const loadClients = createAppAsyncThunk<{ query: string }, { results: Cli
                 url: `${BACKEND_API_URL}/clients${query}`,
                 method: 'get',
             },
-            sessionToken: window.localStorage.getItem('token'),
         })
 );
 
@@ -50,7 +55,6 @@ export const deleteClient = createAppAsyncThunk<{ id: string }, boolean>(
                 url: `${BACKEND_API_URL}/client?id=${id}`,
                 method: 'delete',
             },
-            sessionToken: window.localStorage.getItem('token'),
         }),
     true
 );
@@ -64,7 +68,6 @@ export const createClient = createAppAsyncThunk<{ address: string; email: string
                 method: 'post',
                 data,
             },
-            sessionToken: window.localStorage.getItem('token'),
         })
 );
 
@@ -77,6 +80,16 @@ export const editClient = createAppAsyncThunk<{ id: string; address: string; ema
                 method: 'put',
                 data,
             },
-            sessionToken: window.localStorage.getItem('token'),
+        })
+);
+
+export const loadAddresses = createAppAsyncThunk<{ address: string }, Address[]>(
+    'clients/loadAddresses',
+    async ({ address }, { state }) =>
+        makeApiRequest<Address[]>({
+            config: {
+                url: `${BACKEND_API_URL}/address?address=${address}`,
+                method: 'get',
+            },
         })
 );

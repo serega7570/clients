@@ -3,16 +3,18 @@ import {
     CFormFeedback,
     CFormInput,
     CFormLabel,
+    CFormSelect,
     CModal,
     CModalBody,
     CModalFooter,
     CModalHeader,
     CModalTitle,
 } from '@coreui/react';
-import { ChangeEvent, FC, useState } from 'react';
+import { ChangeEvent, FC, useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
-import { useAppDispatch } from '../../app/store';
-import { createClient, editClient, loadClients } from '../pages/main-page/main-page-slice';
+import { useAppDispatch, useAppSelector } from '../../app/store';
+import { selectAddresses } from '../pages/main-page/main-page-selectors';
+import { createClient, editClient, loadAddresses, loadClients } from '../pages/main-page/main-page-slice';
 import { Client } from '../pages/main-page/main-page-type';
 
 type Props = {
@@ -32,6 +34,8 @@ const CreateCompanyModal: FC<Props> = ({ visible, setVisible, client, setClient 
     const dispatch = useAppDispatch();
     const { search } = useLocation();
 
+    const addresses = useAppSelector(selectAddresses);
+
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
     const [address, setAddress] = useState('');
@@ -39,6 +43,12 @@ const CreateCompanyModal: FC<Props> = ({ visible, setVisible, client, setClient 
     const [nameError, setNameError] = useState('');
     const [emailError, setEmailError] = useState('');
     const [addressError, setAddressError] = useState('');
+
+    useEffect(() => {
+        if (address.trim()) {
+            dispatch(loadAddresses.getThunk({ address: address }));
+        }
+    }, [dispatch, address]);
 
     const onShow = () => {
         if (client) {
@@ -96,8 +106,9 @@ const CreateCompanyModal: FC<Props> = ({ visible, setVisible, client, setClient 
             setEmailError('Введите корректный почтовый адрес');
             isInputValid = false;
         }
-        if (!addressTrimmed) {
-            setAddressError('Необходимо заполнить данное поле');
+
+        if (!addresses.includes(address)) {
+            setAddressError('Выберите адрес из списка');
             isInputValid = false;
         }
 
@@ -149,11 +160,26 @@ const CreateCompanyModal: FC<Props> = ({ visible, setVisible, client, setClient 
                 <CFormInput
                     name={InputFieldNames.Address}
                     value={address}
+                    className="mb-2"
                     onChange={handleChangeInputFields}
                     invalid={!!addressError}
                     placeholder="Введите адрес клиента"
                     spellCheck={false}
                 />
+                <CFormSelect
+                    invalid={!!addressError}
+                    value={address}
+                    onChange={(e) => {
+                        setAddress(e.target.value);
+                        setAddressError('');
+                    }}
+                    htmlSize={3}
+                    multiple
+                >
+                    {addresses.map((item) => (
+                        <option value={item}>{item}</option>
+                    ))}
+                </CFormSelect>
                 <CFormFeedback invalid>{addressError}</CFormFeedback>
             </CModalBody>
             <CModalFooter>
